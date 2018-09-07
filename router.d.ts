@@ -1,4 +1,4 @@
-import { Action } from "history";
+import { Action, History, Location } from "history";
 declare type LocationUpdate = {
     action: Action;
     hash: string;
@@ -13,7 +13,23 @@ declare type LocationUpdate = {
     };
     key?: string;
 };
-export declare const push: any;
-export declare const replace: any;
-export declare const on: (path: string, resolver: (location: LocationUpdate) => void) => void;
-export {};
+declare type Resolver = (location: LocationUpdate) => void;
+declare type Route = [string[], Resolver];
+declare type Config = {
+    type?: "Hash" | "Memory" | "Browser";
+    basename?: string;
+};
+declare class Router {
+    routes: Route[];
+    history: History;
+    constructor(config: Config);
+    private resolve;
+    add(selector: string, resolver: Resolver): this;
+    push(url: string | Location<any>): void;
+    replace(url: string | Location<any>): void;
+    go(n: number): void;
+    goForward(): void;
+    goBack(n: number): void;
+}
+declare const _default: (config: Config) => Router;
+export default _default;

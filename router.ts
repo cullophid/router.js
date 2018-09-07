@@ -45,14 +45,6 @@ const parseQuery = (query:string) =>
     .map(param => param.split("=").map(decodeURIComponent))
     .reduce((acc, [key, value]) => ({...acc, [key]: value}), {})
 
-  const resolve = (routes: Route[], locationUpdate:LocationUpdate) => {
-    for (let [selector, handler] of routes) {
-      let loc = matchRoute(selector, locationUpdate);
-      if (loc !== null) {
-        return handler(loc)
-      }
-    }
-  }
 
 type Config = {
   type?: "Hash" | "Memory" | "Browser"
@@ -75,15 +67,21 @@ class Router {
         break;
     }
     this.routes = []
-    this.history.listen((location:Location, action:Action) => {
-      let locationUpdate:LocationUpdate = {
-        ...location,
-        action: action,
-        query: parseQuery(location.search),
-        params: {}
+    this.history.listen(this.resolve)
+  }
+  private resolve(location:Location, action:Action) {
+    let locationUpdate:LocationUpdate = {
+      ...location,
+      action: action,
+      query: parseQuery(location.search),
+      params: {}
+    }
+    for (let [selector, handler] of this.routes) {
+      let loc = matchRoute(selector, locationUpdate);
+      if (loc !== null) {
+        return handler(loc)
       }
-      resolve(this.routes, locationUpdate)
-    })
+    }
   }
   add(selector:string, resolver:Resolver) {
     this.routes.push([selector.split("/"), resolver])
