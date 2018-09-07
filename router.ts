@@ -1,8 +1,7 @@
-import {Action} from "history"
+import {Action, History, Location} from "history"
 import createBrowserHistory from "history/createBrowserHistory"
-
-const history = createBrowserHistory()
-const routes:Route[] = []
+import createMemoryHistory from "history/createMemoryHistory"
+import createHashHistory from "history/createHashHistory"
 
 type LocationUpdate = {
     action: Action,
@@ -36,17 +35,9 @@ const matchRoute = (selector:string[], location:LocationUpdate) => {
       return null
     }
   }
+  if (selector.length > path.length) return null // ensure we match the full url
+
   return {...location, params}
-}
-
-
-const resolve = (location:LocationUpdate) => {
-  for (let [selector, handler] of routes) {
-    let loc = matchRoute(selector, location);
-    if (loc !== null) {
-      return handler(loc)
-    }
-  }
 }
 
 const parseQuery = (query:string) => 
@@ -54,20 +45,68 @@ const parseQuery = (query:string) =>
     .map(param => param.split("=").map(decodeURIComponent))
     .reduce((acc, [key, value]) => ({...acc, [key]: value}), {})
 
-history.listen((location, action) => {
-  let locationUpdate:LocationUpdate = {
-    ...location,
-    action: action,
-    query: parseQuery(location.search),
-    params: {}
+  const resolve = (routes: Route[], locationUpdate:LocationUpdate) => {
+    for (let [selector, handler] of routes) {
+      let loc = matchRoute(selector, locationUpdate);
+      if (loc !== null) {
+        return handler(loc)
+      }
+    }
   }
-  resolve(locationUpdate)
-})
 
-export const push = history.push
-
-export const replace = history.replace
-
-export const on = (path:string, resolver: (location:LocationUpdate) => void) => {
-  routes.push([path.split("/"), resolver])
+type Config = {
+  type?: "Hash" | "Memory" | "Browser"
+  basename?:string
 }
+
+class Router {
+  routes:Route[]
+  history:History
+  constructor(config:Config) {
+    switch (config.type) {
+      case "Hash":
+        this.history = createHashHistory()
+        break;
+      case "Memory":
+        this.history = createMemoryHistory()
+        break;
+      default:
+        this.history = createBrowserHistory()
+        break;
+    }
+    this.routes = []
+    this.history.listen((location:Location, action:Action) => {
+      let locationUpdate:LocationUpdate = {
+        ...location,
+        action: action,
+        query: parseQuery(location.search),
+        params: {}
+      }
+      resolve(this.routes, locationUpdate)
+    })
+  }
+  add(selector:string, resolver:Resolver) {
+    this.routes.push([selector.split("/"), resolver])
+    return this
+  }
+  push(url:string| Location<any>) {
+    this.history.push(url)
+  }
+  replace(url:string | Location<any>) {
+    this.history.replace(url)
+  }
+  go(n:number) {
+    this.history.go(n)
+  }
+  goForward() {
+    this.history.goForward()
+  }
+  goBack(n:number) {
+    this.history.goBack(n)
+  }
+}
+
+export default (config:Config) => new Router(config)
+
+
+
