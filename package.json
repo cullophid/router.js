@@ -1,0 +1,18 @@
+{
+  "name": "@oolon/router.js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "router.js",
+  "types": "router.d.ts",
+  "scripts": {
+    "build": "tsc -d --outDir . router.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "history": "^4.7.2"
+  },
+  "devDependencies": {
+    "typescript": "^3.0.3"
+  }
+}

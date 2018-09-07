@@ -1,0 +1,1 @@
+simple SPA router based on history
