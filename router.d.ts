@@ -1,35 +1,12 @@
-import { Action, History, Location } from "history";
-declare type LocationUpdate = {
-    action: Action;
-    hash: string;
-    state: any;
-    pathname: string;
-    search: string;
-    query: {
-        [key: string]: string;
-    };
-    params: {
-        [key: string]: string;
-    };
-    key?: string;
+export declare type Params = {
+    [key: string]: string;
 };
-declare type Resolver = (location: LocationUpdate) => void;
-declare type Route = [string[], Resolver];
-declare type Config = {
-    type?: "Hash" | "Memory" | "Browser";
-    basename?: string;
+export declare type Query = {
+    [key: string]: string;
 };
-declare class Router {
-    routes: Route[];
-    history: History;
-    constructor(config: Config);
-    private resolve;
-    add(selector: string, resolver: Resolver): this;
-    push(url: string | Location<any>): void;
-    replace(url: string | Location<any>): void;
-    go(n: number): void;
-    goForward(): void;
-    goBack(): void;
-}
-declare const _default: (config: Config) => Router;
-export default _default;
+export declare type Route<T> = {
+    route: string;
+    handler: (params: Params, query: Query) => T;
+};
+export declare const parseQueryString: (query: string) => Query;
+export declare const match: <T>(location: Location, routes: Route<T>[]) => T;
