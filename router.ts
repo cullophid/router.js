@@ -1,110 +1,43 @@
-import {Action, History, Location} from "history"
-import createBrowserHistory from "history/createBrowserHistory"
-import createMemoryHistory from "history/createMemoryHistory"
-import createHashHistory from "history/createHashHistory"
 
-type LocationUpdate = {
-    action: Action,
-    hash: string;
-    state:any,
-    pathname: string;
-    search: string;
-    query: {
-      [key:string]: string;
-    };
-    params: {
-      [key: string]:string;
-    };
-    key?: string;
-}
 
-type Resolver = (location:LocationUpdate) => void
-type Route = [string[], Resolver]
+export type Params = {[key:string]: string}
+export type Query = {[key:string]: string}
+export type Route<T> = {route: string, handler: (params:Params, query:Query) => T}
 
 let isVar = (s:string) => s.indexOf(":") == 0;
-const matchRoute = (selector:string[], location:LocationUpdate) => {
-  let path = location.pathname.split("/")
-  let params = {}
-  for (let i in selector) {
+const matchRoute = (route:string, location:Location) => {
+  let locationPath = location.pathname.split("/")
+  let params:Params = {}
+  let routePath = route.split("/")
+  for (let i in routePath) {
     // vars gets added to params
-    if (selector[i] === "*") {
-      return {...location, params}
-    } else if (isVar(selector[i])) {
-      params[selector[i].slice(1)] = path[i]
-    } else if (selector[i] !== path[i]) { // non vars must match the selector
+    if (routePath[i] === "*") {
+      return params
+    } else if (isVar(routePath[i])) {
+      params[routePath[i].slice(1)] = locationPath[i]
+    } else if (routePath[i] !== locationPath[i]) { // non vars must match the selector
       return null
     }
   }
-  if (selector.length > path.length) return null // ensure we match the full url
+  if (routePath.length > locationPath.length) return null // ensure we match the full url
 
-  return {...location, params}
+  return params
 }
 
-const parseQuery = (query:string) => 
-  query.split("?")
+export const parseQueryString = (query:string):Query => 
+  query === "" ? {} : 
+  query
+    .slice(1)
+    .split("&")
     .map(param => param.split("=").map(decodeURIComponent))
     .reduce((acc, [key, value]) => ({...acc, [key]: value}), {})
 
 
-type Config = {
-  type?: "Hash" | "Memory" | "Browser"
-  basename?:string
-}
-
-class Router {
-  routes:Route[]
-  history:History
-  constructor(config:Config) {
-    switch (config.type) {
-      case "Hash":
-        this.history = createHashHistory()
-        break;
-      case "Memory":
-        this.history = createMemoryHistory()
-        break;
-      default:
-        this.history = createBrowserHistory()
-        break;
-    }
-    this.routes = []
-    this.history.listen(this.resolve)
-  }
-  private resolve(location:Location, action:Action) {
-    let locationUpdate:LocationUpdate = {
-      ...location,
-      action: action,
-      query: parseQuery(location.search),
-      params: {}
-    }
-    for (let [selector, handler] of this.routes) {
-      let loc = matchRoute(selector, locationUpdate);
-      if (loc !== null) {
-        return handler(loc)
+export const match = <T>(location:Location, routes:Route<T>[]) => {
+    for (let {route, handler} of routes) {
+      let params = matchRoute(route, location);
+      if (params !== null) {
+        return handler(params, parseQueryString(location.search))
       }
     }
-  }
-  add(selector:string, resolver:Resolver) {
-    this.routes.push([selector.split("/"), resolver])
-    return this
-  }
-  push(url:string| Location<any>) {
-    this.history.push(url)
-  }
-  replace(url:string | Location<any>) {
-    this.history.replace(url)
-  }
-  go(n:number) {
-    this.history.go(n)
-  }
-  goForward() {
-    this.history.goForward()
-  }
-  goBack(n:number) {
-    this.history.goBack(n)
-  }
-}
-
-export default (config:Config) => new Router(config)
-
-
-
+ }

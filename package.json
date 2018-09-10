@@ -5,14 +5,34 @@
   "main": "router.js",
   "types": "router.d.ts",
   "scripts": {
-    "build": "tsc -d --outDir . router.ts"
+    "test": "jest",
+    "build": "tsc"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/history": "^4.7.0",
     "history": "^4.7.2"
   },
   "devDependencies": {
-    "typescript": "^3.0.3"
+    "@types/jest": "^23.3.2",
+    "jest": "^23.6.0",
+    "ts-jest": "^23.1.4",
+    "typescript": "^3.0.3",
+    "url": "^0.11.0"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "\\.*test\\.ts$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
   }
 }

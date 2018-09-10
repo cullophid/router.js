@@ -29,7 +29,7 @@ declare class Router {
     replace(url: string | Location<any>): void;
     go(n: number): void;
     goForward(): void;
-    goBack(n: number): void;
+    goBack(): void;
 }
 declare const _default: (config: Config) => Router;
 export default _default;

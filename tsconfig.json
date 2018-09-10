@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "outDir": "."
+  },
+  "files": [
+    "router.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

@@ -11,83 +11,45 @@ var __assign = (this && this.__assign) || function () {
     return __assign.apply(this, arguments);
 };
 exports.__esModule = true;
-var createBrowserHistory_1 = require("history/createBrowserHistory");
-var createMemoryHistory_1 = require("history/createMemoryHistory");
-var createHashHistory_1 = require("history/createHashHistory");
 var isVar = function (s) { return s.indexOf(":") == 0; };
-var matchRoute = function (selector, location) {
-    var path = location.pathname.split("/");
+var matchRoute = function (route, location) {
+    var locationPath = location.pathname.split("/");
     var params = {};
-    for (var i in selector) {
+    var routePath = route.split("/");
+    for (var i in routePath) {
         // vars gets added to params
-        if (selector[i] === "*") {
-            return __assign({}, location, { params: params });
+        if (routePath[i] === "*") {
+            return params;
         }
-        else if (isVar(selector[i])) {
-            params[selector[i].slice(1)] = path[i];
+        else if (isVar(routePath[i])) {
+            params[routePath[i].slice(1)] = locationPath[i];
         }
-        else if (selector[i] !== path[i]) { // non vars must match the selector
+        else if (routePath[i] !== locationPath[i]) { // non vars must match the selector
             return null;
         }
     }
-    if (selector.length > path.length)
+    if (routePath.length > locationPath.length)
         return null; // ensure we match the full url
-    return __assign({}, location, { params: params });
+    return params;
 };
-var parseQuery = function (query) {
-    return query.split("?")
-        .map(function (param) { return param.split("=").map(decodeURIComponent); })
-        .reduce(function (acc, _a) {
-        var key = _a[0], value = _a[1];
-        var _b;
-        return (__assign({}, acc, (_b = {}, _b[key] = value, _b)));
-    }, {});
+exports.parseQueryString = function (query) {
+    return query === "" ? {} :
+        query
+            .slice(1)
+            .split("&")
+            .map(function (param) { return param.split("=").map(decodeURIComponent); })
+            .reduce(function (acc, _a) {
+            var key = _a[0], value = _a[1];
+            var _b;
+            return (__assign({}, acc, (_b = {}, _b[key] = value, _b)));
+        }, {});
 };
-var Router = /** @class */ (function () {
-    function Router(config) {
-        switch (config.type) {
-            case "Hash":
-                this.history = createHashHistory_1["default"]();
-                break;
-            case "Memory":
-                this.history = createMemoryHistory_1["default"]();
-                break;
-            default:
-                this.history = createBrowserHistory_1["default"]();
-                break;
+exports.match = function (location, routes) {
+    for (var _i = 0, routes_1 = routes; _i < routes_1.length; _i++) {
+        var _a = routes_1[_i], route = _a.route, handler = _a.handler;
+        var params = matchRoute(route, location);
+        if (params !== null) {
+            return handler(params, exports.parseQueryString(location.search));
         }
-        this.routes = [];
-        this.history.listen(this.resolve);
     }
-    Router.prototype.resolve = function (location, action) {
-        var locationUpdate = __assign({}, location, { action: action, query: parseQuery(location.search), params: {} });
-        for (var _i = 0, _a = this.routes; _i < _a.length; _i++) {
-            var _b = _a[_i], selector = _b[0], handler = _b[1];
-            var loc = matchRoute(selector, locationUpdate);
-            if (loc !== null) {
-                return handler(loc);
-            }
-        }
-    };
-    Router.prototype.add = function (selector, resolver) {
-        this.routes.push([selector.split("/"), resolver]);
-        return this;
-    };
-    Router.prototype.push = function (url) {
-        this.history.push(url);
-    };
-    Router.prototype.replace = function (url) {
-        this.history.replace(url);
-    };
-    Router.prototype.go = function (n) {
-        this.history.go(n);
-    };
-    Router.prototype.goForward = function () {
-        this.history.goForward();
-    };
-    Router.prototype.goBack = function (n) {
-        this.history.goBack(n);
-    };
-    return Router;
-}());
-exports["default"] = (function (config) { return new Router(config); });
+};
